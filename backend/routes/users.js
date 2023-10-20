@@ -13,9 +13,6 @@ route.post('/signin', usersController.signin);
 // Get user by id (/users/id/:id)
 route.get('/id/:id', usersController.getUserById);
 
-// Get user by username (/users/usrname/:username)
-route.get('/username/:username', usersController.getUserByUsername);
-
 // Get all users (/users)
 route.get('/', usersController.fetchAllUsers);
 
