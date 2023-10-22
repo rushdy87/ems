@@ -2,7 +2,8 @@ const express = require('express');
 
 const sequelize = require('./utils/db');
 
-const userRouters = require('./routes/users');
+const userRoutes = require('./routes/users');
+const unitRoutes = require('./routes/units');
 
 const PORT = 3030;
 
@@ -19,7 +20,8 @@ app.use((req, res, next) => {
 });
 
 // Routes
-app.use('/users', userRouters);
+app.use('/users', userRoutes);
+app.use('/units', unitRoutes);
 
 sequelize.sync();
 
