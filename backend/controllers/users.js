@@ -1,13 +1,7 @@
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcrypt'); //A library to help you hash passwords.
 const Users = require('../models/users');
-const users = [
-  {
-    id: 1,
-    username: 'username',
-    password: 'password',
-    authorization_level: 1,
-  },
-];
+
+const { handleResponse } = require('../utils/helper/handle-response');
 
 // Sign up
 exports.signup = async (req, res, next) => {
@@ -16,16 +10,18 @@ exports.signup = async (req, res, next) => {
 
     // Check if required fields are missing.
     if (!user.username || !user.password || !user.confirmPassword) {
-      return res.status(400).json({
+      return handleResponse(res, {
         error:
           'Missing required fields: username, password, or confirmPassword.',
+        statusCode: 400,
       });
     }
 
     // Check if the password and confirmPassword match.
     if (user.password !== user.confirmPassword) {
-      return res.status(400).json({
+      return handleResponse(res, {
         error: 'Password confirmation does not match.',
+        statusCode: 400,
       });
     }
 
@@ -36,20 +32,25 @@ exports.signup = async (req, res, next) => {
     const newUser = await Users.create({ ...user, password: hashedPassword });
 
     if (!newUser) {
-      // Handle database error specifically if user creation fails.
-      return res.status(500).json({ error: 'Failed to create a new user.' });
+      return handleResponse(res, {
+        error: 'Failed to create a new user.',
+        statusCode: 500,
+      });
     }
 
     // Successful user creation.
-    return res.status(201).json({
+    return handleResponse(res, {
       message: 'User successfully created.',
-      user: newUser,
+      user: {
+        id: newUser.id,
+        name: newUser.name,
+        username: newUser.username,
+        authorization_level: newUser.authorization_level,
+        avatar: newUser.avatar,
+      },
     });
   } catch (error) {
-    console.error(error);
-
-    // Handle unexpected errors with a generic message.
-    res.status(500).json({ error: 'Internal server error.' });
+    return handleResponse(res, { error }, 500);
   }
 };
 
@@ -60,39 +61,35 @@ exports.signin = async (req, res, next) => {
 
     // Check if required fields are missing.
     if (!username || !password) {
-      return res.status(400).json({
+      return handleResponse(res, {
         error: 'Missing required fields: username or password.',
+        statusCode: 400,
       });
     }
 
     // Find the user based on the username in the database.
     const user = await Users.findOne({ where: { username } });
 
-    if (!user) {
-      return res.status(400).json({
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+      return handleResponse(res, {
         error: 'Wrong username or password.',
-      });
-    }
-
-    // Compare the hashed password with the provided password.
-    const passwordMatch = await bcrypt.compare(password, user.password);
-
-    if (!passwordMatch) {
-      return res.status(400).json({
-        error: 'Wrong username or password.',
+        statusCode: 400,
       });
     }
 
     // Successful user sign-in.
-    return res.status(200).json({
+    return handleResponse(res, {
       message: 'User successfully signed in.',
-      user,
+      user: {
+        id: user.id,
+        name: user.name,
+        username: user.username,
+        authorization_level: user.authorization_level,
+        avatar: user.avatar,
+      },
     });
   } catch (error) {
-    console.error(error);
-
-    // Handle unexpected errors with a generic message.
-    res.status(500).json({ error: 'Internal server error.' });
+    return handleResponse(res, { error }, 500);
   }
 };
 
@@ -103,22 +100,25 @@ exports.getUserById = async (req, res, next) => {
     const user = await Users.findByPk(id);
 
     if (!user) {
-      // User not found - return a 404 response.
-      return res.status(404).json({
+      return handleResponse(res, {
         error: 'User not found.',
+        statusCode: 404,
       });
     }
 
     // Successful user retrieval.
-    return res.status(200).json({
+    return handleResponse(res, {
       message: 'User found successfully.',
-      user,
+      user: {
+        id: user.id,
+        name: user.name,
+        username: user.username,
+        authorization_level: user.authorization_level,
+        avatar: user.avatar,
+      },
     });
   } catch (error) {
-    console.error(error);
-
-    // Handle unexpected errors with a generic message.
-    res.status(500).json({ error: 'Internal server error.' });
+    return handleResponse(res, { error }, 500);
   }
 };
 
@@ -141,22 +141,25 @@ exports.fetchAllUsers = async (req, res, next) => {
     const users = await Users.findAll();
 
     if (users.length === 0) {
-      // No users found - return a 404 response.
-      return res.status(404).json({
+      return handleResponse(res, {
         error: 'No users found.',
+        statusCode: 404,
       });
     }
 
     // Successful users retrieval.
-    return res.status(200).json({
+    return handleResponse(res, {
       message: 'Users found successfully.',
-      users,
+      users: users.map((user) => ({
+        id: user.id,
+        name: user.name,
+        username: user.username,
+        authorization_level: user.authorization_level,
+        avatar: user.avatar,
+      })),
     });
   } catch (error) {
-    console.error(error);
-
-    // Handle unexpected errors with a generic message.
-    res.status(500).json({ error: 'Internal server error.' });
+    return handleResponse(res, { error }, 500);
   }
 };
 
@@ -168,8 +171,10 @@ exports.updateUser = async (req, res, next) => {
     const user = await Users.findByPk(id);
 
     if (!user) {
-      // User not found - return a 404 response with a specific message.
-      return res.status(404).json({ error: 'User not found.' });
+      return handleResponse(res, {
+        error: 'User not found.',
+        statusCode: 404,
+      });
     }
 
     // Update only allowed properties in user data.
@@ -189,15 +194,18 @@ exports.updateUser = async (req, res, next) => {
     await user.save();
 
     // Successful user update.
-    return res.status(200).json({
+    return handleResponse(res, {
       message: 'User updated successfully.',
-      user,
+      user: {
+        id: user.id,
+        name: user.name,
+        username: user.username,
+        authorization_level: user.authorization_level,
+        avatar: user.avatar,
+      },
     });
   } catch (error) {
-    console.error(error);
-
-    // Handle unexpected errors with a generic message.
-    res.status(500).json({ error: 'Internal server error.' });
+    return handleResponse(res, { error }, 500);
   }
 };
 
@@ -208,8 +216,10 @@ exports.deleteUser = async (req, res, next) => {
     const user = await Users.findByPk(id);
 
     if (!user) {
-      // User not found - return a 404 response with a specific message.
-      return res.status(404).json({ error: 'User not found.' });
+      return handleResponse(res, {
+        error: 'User not found.',
+        statusCode: 404,
+      });
     }
 
     const deletionResult = await Users.destroy({
@@ -221,12 +231,12 @@ exports.deleteUser = async (req, res, next) => {
       return res.status(204).send();
     } else {
       // The deletion did not affect any rows (user not found)
-      return res.status(404).json({ error: 'User not found.' });
+      return handleResponse(res, {
+        error: 'User not found.',
+        statusCode: 404,
+      });
     }
   } catch (error) {
-    console.error(error);
-
-    // Handle unexpected errors with a generic message.
-    res.status(500).json({ error: 'Internal server error.' });
+    return handleResponse(res, { error }, 500);
   }
 };

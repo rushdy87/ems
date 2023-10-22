@@ -27,3 +27,5 @@ module.exports = route;
 // Problems need to solve
 // 1. Unauthorized person can make a get requist!!!
 // 2. Password Hashing (The node:crypto module?!)
+// 3. Change in Database (adding default value for authorization_level)
+// 4. add default avatar
