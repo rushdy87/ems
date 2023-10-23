@@ -25,6 +25,14 @@ exports.signup = async (req, res, next) => {
       });
     }
 
+    const userExist = Users.findOne({ where: { username: user.username } });
+    if (userExist) {
+      return handleResponse(res, {
+        error: 'A user with this username already exists',
+        statusCode: 400,
+      });
+    }
+
     // Hash the password before saving it to the database.
     const hashedPassword = await bcrypt.hash(user.password, 10); // 10 is the number of salt rounds.
 
