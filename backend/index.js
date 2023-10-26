@@ -5,6 +5,7 @@ const sequelize = require('./utils/db');
 const userRoutes = require('./routes/users');
 const unitRoutes = require('./routes/units');
 const workdayRoutes = require('./routes/work_day');
+const jobTitlesRoutes = require('./routes/job_titles');
 
 const PORT = 3030;
 
@@ -24,6 +25,7 @@ app.use((req, res, next) => {
 app.use('/users', userRoutes);
 app.use('/units', unitRoutes);
 app.use('/workday', workdayRoutes);
+app.use('/job-titles', jobTitlesRoutes);
 
 sequelize.sync();
 
